@@ -1,0 +1,1107 @@
+/* ============================================================
+   style.css — Gry
+   Czarne tło, efekt szkła, neonowe akcenty, lista gier i plansza.
+   Współpraca z script.js / dino.js:
+   • --accent / --accent-2 podmieniane z JS,
+   • [data-theme="dark|light"] — motyw,
+   • [data-fx="on|off"] — efekty tła,
+   • .open / .show / hidden — widoczność paneli i nakładek.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Zmienne motywu
+   ------------------------------------------------------------ */
+:root {
+  /* Kolor akcentu (zmieniany dynamicznie z JS) */
+  --accent: #6366f1;
+  --accent-2: #8b5cf6;
+
+  /* Ciemny motyw (domyślny) — czarne tło */
+  --bg: #000000;
+  --surface: #0b0c11;
+  --surface-2: #14161d;
+  --surface-3: #1d2029;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.3);
+  --text: #eaeef7;
+  --muted: #98a2b8;
+  --glass: rgba(8, 9, 14, 0.74);
+  --glass-strong: rgba(8, 9, 14, 0.93);
+  --shadow: 0 24px 48px -22px rgba(0, 0, 0, 0.75);
+  --shadow-sm: 0 12px 26px -14px rgba(0, 0, 0, 0.7);
+  --grid-line: rgba(148, 163, 184, 0.07);
+  --shine: rgba(255, 255, 255, 0.38);
+  --shine-card: rgba(255, 255, 255, 0.07);
+  --aura: 1;
+
+  /* Wspólne parametry */
+  --radius: 16px;
+  --radius-sm: 11px;
+  --navbar-h: 68px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --spring: 0.4s cubic-bezier(0.34, 1.42, 0.64, 1);
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  color-scheme: dark;
+}
+
+/* Jasny motyw */
+[data-theme="light"] {
+  --bg: #f2f4fa;
+  --surface: #ffffff;
+  --surface-2: #eceff7;
+  --surface-3: #e1e5f0;
+  --border: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.2);
+  --text: #0f172a;
+  --muted: #5b6579;
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-strong: rgba(255, 255, 255, 0.95);
+  --shadow: 0 24px 48px -26px rgba(15, 23, 42, 0.28);
+  --shadow-sm: 0 12px 26px -16px rgba(15, 23, 42, 0.22);
+  --grid-line: rgba(15, 23, 42, 0.055);
+  --shine: rgba(255, 255, 255, 0.55);
+  --shine-card: rgba(15, 23, 42, 0.05);
+  --aura: 0.55;
+
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------
+   2. Reset i podstawy
+   ------------------------------------------------------------ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  isolation: isolate; /* pozwala położyć poświatę POD treścią */
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color: var(--text);
+  background: var(--bg);
+  accent-color: var(--accent);
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+img,
+svg {
+  display: block;
+}
+
+button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+/* Warstwa 1: kolorowa „zorza” — reaguje na kolor akcentu */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -30vh -15vw;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--aura);
+  background:
+    radial-gradient(46% 36% at 16% 10%,
+      color-mix(in srgb, var(--accent) 30%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 13%, transparent) 42%,
+      transparent 74%),
+    radial-gradient(42% 32% at 86% 6%,
+      color-mix(in srgb, var(--accent-2) 26%, transparent) 0%,
+      color-mix(in srgb, var(--accent-2) 11%, transparent) 44%,
+      transparent 76%),
+    radial-gradient(50% 40% at 50% 108%,
+      color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+      transparent 72%);
+  animation: aurora 26s ease-in-out infinite alternate;
+}
+
+/* Warstwa 2: delikatna siatka */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 58px 58px;
+  -webkit-mask-image: radial-gradient(120% 72% at 50% 0%, #000 4%, transparent 68%);
+  mask-image: radial-gradient(120% 72% at 50% 0%, #000 4%, transparent 68%);
+}
+
+/* Warstwa 3: ziarno (usuwa „schodki” na gradiencie) */
+main::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* Efekty tła wyłączone w ustawieniach */
+html[data-fx="off"] body::before,
+html[data-fx="off"] body::after,
+html[data-fx="off"] main::after {
+  display: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Pasek przewijania */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 8px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 50%, var(--surface-3));
+}
+
+/* ------------------------------------------------------------
+   3. Górny pasek (navbar)
+   ------------------------------------------------------------ */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 55%, transparent) 30%,
+    color-mix(in srgb, var(--accent-2) 55%, transparent) 70%,
+    transparent);
+  opacity: 0.75;
+}
+
+.navbar__inner {
+  max-width: 1060px;
+  height: var(--navbar-h);
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navbar__hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logo__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow:
+    0 8px 20px -6px color-mix(in srgb, var(--accent) 75%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform var(--spring), box-shadow var(--transition);
+}
+
+.logo:hover .logo__icon {
+  transform: rotate(-8deg) scale(1.07);
+}
+
+.logo__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ------------------------------------------------------------
+   4. Przyciski i ikony
+   ------------------------------------------------------------ */
+.icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.icon-btn:hover {
+  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn svg {
+  width: 19px;
+  height: 19px;
+  transition: transform var(--spring);
+}
+
+.icon-btn:hover svg {
+  transform: rotate(45deg);
+}
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn--sm {
+  height: 38px;
+  padding: 0 15px;
+  font-size: 0.85rem;
+}
+
+.btn--block {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn--primary {
+  color: #fff;
+  background-image: linear-gradient(120deg, var(--accent), var(--accent-2), var(--accent));
+  background-size: 200% 100%;
+  box-shadow: 0 14px 30px -14px color-mix(in srgb, var(--accent) 95%, transparent);
+  animation: gradientShift 8s ease infinite;
+}
+
+.btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -16px color-mix(in srgb, var(--accent) 100%, transparent);
+}
+
+/* Błysk przesuwający się po przycisku */
+.btn--primary::after {
+  content: "";
+  position: absolute;
+  top: -45%;
+  bottom: -45%;
+  left: -75%;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent, var(--shine), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn--primary:hover::after {
+  left: 135%;
+}
+
+.btn--ghost {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  border-color: var(--border);
+}
+
+.btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------------------------------------
+   5. Widoki i lista gier
+   ------------------------------------------------------------ */
+.view {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 44px 20px 80px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.view--game {
+  max-width: 1000px;
+  padding-top: 30px;
+}
+
+.section-head {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.section-head h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.section-head p {
+  margin: 0 auto;
+  max-width: 560px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 7s ease infinite;
+}
+
+.games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.game {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--surface) 92%, transparent),
+    color-mix(in srgb, var(--surface) 78%, transparent));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.game::after {
+  content: "";
+  position: absolute;
+  top: -25%;
+  bottom: -25%;
+  left: -70%;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent, var(--shine-card), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow:
+    0 26px 50px -26px color-mix(in srgb, var(--accent) 85%, transparent),
+    var(--shadow);
+}
+
+.game:hover::after {
+  left: 130%;
+}
+
+.game__icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  font-size: 1.9rem;
+  line-height: 1;
+  border-radius: 15px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    color-mix(in srgb, var(--accent-2) 16%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.game__meta h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+}
+
+.game__meta p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.game__record {
+  margin-top: 6px !important;
+  font-size: 0.82rem !important;
+}
+
+.game__record strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.game__link {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border-strong);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.game__link:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.tag--soon {
+  color: var(--muted);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.game--soon {
+  opacity: 0.62;
+}
+
+.game--soon:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+}
+
+.soon {
+  font-size: 0.78rem;
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  padding: 7px 14px;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   6. Widok gry
+   ------------------------------------------------------------ */
+.game-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.game-bar h1,
+.game-bar h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.hud {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.hud__value {
+  font-size: 1.05rem;
+}
+
+.hud__sep {
+  color: var(--muted);
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 62%),
+    var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: min(48vh, 300px);
+  min-height: 190px;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.stage__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px;
+  text-align: center;
+  background: color-mix(in srgb, var(--bg) 76%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeUp 0.3s ease both;
+}
+
+.stage__overlay[hidden] {
+  display: none;
+}
+
+.stage__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.stage__text {
+  margin: 0;
+  max-width: 440px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.controls {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.controls kbd {
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 1px 7px;
+}
+
+/* ------------------------------------------------------------
+   7. Panel ustawień
+   ------------------------------------------------------------ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    backdrop-filter 0.35s ease,
+    -webkit-backdrop-filter 0.35s ease;
+}
+
+.overlay.show {
+  opacity: 1;
+  visibility: visible;
+  backdrop-filter: blur(5px) saturate(120%);
+  -webkit-backdrop-filter: blur(5px) saturate(120%);
+}
+
+.settings-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 90;
+  width: min(370px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-left: 1px solid var(--border);
+  box-shadow: -30px 0 60px -30px rgba(0, 0, 0, 0.8);
+  transform: translateX(105%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    transparent 5%,
+    color-mix(in srgb, var(--accent) 70%, transparent) 45%,
+    color-mix(in srgb, var(--accent-2) 70%, transparent) 60%,
+    transparent 95%);
+}
+
+.settings-panel.open {
+  transform: none;
+}
+
+.settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+.settings-panel__header h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  letter-spacing: -0.01em;
+}
+
+.settings-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.settings-panel__footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+.setting-group {
+  margin-bottom: 24px;
+}
+
+.setting-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.setting-group h3::before {
+  content: "";
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+/* Przełączniki */
+.switch-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.switch-row input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 25px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: var(--transition);
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--muted);
+  transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: left var(--spring), background-color var(--transition);
+}
+
+.switch-row input:checked + .switch {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 8px 20px -8px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+.switch-row input:checked + .switch::after {
+  left: calc(100% - 20px);
+  background: #fff;
+}
+
+.switch-row:hover .switch {
+  border-color: var(--border-strong);
+}
+
+.switch-row input:focus-visible + .switch {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Kropki koloru akcentu */
+.accent-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+  padding: 4px 0;
+}
+
+.accent-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--dot, var(--accent));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: var(--spring);
+}
+
+.accent-dot:hover {
+  transform: scale(1.14);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 8px 18px -8px var(--dot, var(--accent));
+}
+
+.accent-dot.active {
+  border-color: var(--text);
+  transform: scale(1.06);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 0 0 3px color-mix(in srgb, var(--dot, var(--accent)) 35%, transparent);
+}
+
+/* ------------------------------------------------------------
+   8. Stopka
+   ------------------------------------------------------------ */
+.footer {
+  position: relative;
+  padding: 26px 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1060px, 100%);
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 40%, var(--border)) 50%,
+    transparent);
+}
+
+/* ------------------------------------------------------------
+   9. Powiadomienie (toast)
+   ------------------------------------------------------------ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 22px);
+  transition: var(--transition);
+}
+
+.toast::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  flex-shrink: 0;
+  animation: pulseDot 2.4s ease-in-out infinite;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+/* ------------------------------------------------------------
+   10. Animacje
+   ------------------------------------------------------------ */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-2%, 2%, 0) scale(1.02);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+/* ------------------------------------------------------------
+   11. Responsywność
+   ------------------------------------------------------------ */
+@media (max-width: 720px) {
+  .navbar__inner {
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .navbar__hint {
+    display: none;
+  }
+
+  .view {
+    padding: 30px 14px 64px;
+  }
+
+  .game {
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+  }
+
+  .game .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .game-bar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    justify-items: center;
+  }
+
+  .hud {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 1rem;
+  }
+
+  .game {
+    padding: 16px;
+  }
+
+  .game__icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+
+  .stage canvas {
+    height: min(40vh, 240px);
+  }
+
+  .controls {
+    font-size: 0.8rem;
+  }
+}
+
+/* ------------------------------------------------------------
+   12. Dostępność
+   ------------------------------------------------------------ */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .navbar {
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+  }
+
+  .settings-panel,
+  .toast {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
